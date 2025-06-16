@@ -4,7 +4,7 @@ import numpy as np
 import astropy.units as u
 from astropy.constants import c
 from astropy.io import fits
-from specutils import Spectrum
+from specutils import Spectrum1D
 from scipy.interpolate import interp1d
 from scipy.integrate import simpson
 import matplotlib.pyplot as plt
@@ -28,7 +28,7 @@ def main():
 
     # --- Load spectrum using specutils ---
     try:
-        spec = Spectrum.read(path_fits, format='wcs1d-fits')
+        spec = Spectrum1D.read(path_fits, format='wcs1d-fits')
     except Exception as e:
         print(f"Error reading FITS spectrum: {e}")
         sys.exit(1)
@@ -41,25 +41,37 @@ def main():
         sys.exit(1)
 
     filt_wave_nm = tdata[:, 0]
-    filt_trans = tdata[:, 1] / 100.0  # convert % to fraction
+    filt_trans = tdata[:, 1] 
     filt_wave_aa = filt_wave_nm * 10.0  # convert nm to Ångström
 
-    lambda_eff = compute_lambda_eff(filt_wave_aa, filt_trans)
-    filt_interp = interp1d(filt_wave_aa, filt_trans, bounds_error=False, fill_value=0)
+    filt_interp = interp1d(filt_wave_aa, filt_trans, bounds_error=False)
     trans_spec = filt_interp(spec.spectral_axis.to(u.AA).value)
+
+    # Optional plot
+    if len(sys.argv) > 4 and sys.argv[4].lower() == '--plot':
+        plt.figure(figsize=(10,6))
+        plt.plot(spec.spectral_axis.to(u.AA).value, trans_spec, label='Flux')
+        plt.xlabel('Wavelength (Å)')
+        plt.ylabel('Intensity')
+        plt.title(f'Filter: {filter_path.split("/")[-1].split(".")[0]}, Mag: {mag_v}')
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
 
     # --- Synthetic flux calculation ---
     wl = spec.spectral_axis.to(u.AA).value
     fl = spec.flux
 
-    numerator = simpson(fl * trans_spec * wl, wl)
-    denominator = simpson(trans_spec * wl, wl)
+    numerator = simpson((fl * trans_spec), wl) 
+    denominator = simpson(trans_spec, wl) 
     flux_synth = numerator / denominator
 
     # --- AB reference flux ---
-    c_aa_s = c.to(u.AA / u.s).value
-    f_nu = 10**(-0.4 * (mag_v + 48.6))
-    f_lambda_ref = f_nu * c_aa_s / lambda_eff**2
+    lambda_eff_aa = compute_lambda_eff(filt_wave_aa, filt_trans)
+    c_aa_per_s = c.to("Angstrom / s").value
+    f_nu = 10**(-0.4 * (mag_v + 48.6))  # AB system
+    f_lambda_ref = f_nu * c_aa_per_s / (lambda_eff_aa ** 2)  
 
     scale = f_lambda_ref / flux_synth
     flux_corrected = fl * scale
@@ -67,20 +79,13 @@ def main():
     # Create a Primary HDU with the original header
     with fits.open(path_fits) as hdul:
         primary_header = hdul[0].header.copy()
-        primary_hdu = fits.PrimaryHDU(header=primary_header)
 
-    # Create binary table HDU for the calibrated data
-    col1 = fits.Column(name='wavelength', array=wl, format='D', unit='Angstrom')
-    col2 = fits.Column(name='flux', array=flux_corrected, format='D', unit='ergs/cm2/s/A')
-    table_hdu = fits.BinTableHDU.from_columns([col1, col2])
-    table_hdu.name = 'SPECTRUM'
-    table_hdu.header['CUNIT1'] = 'Angstrom'
-    table_hdu.header['CUNIT2'] = 'ergs/cm2/s/A'
-    table_hdu.header['COMMENT'] = f"Flux calibrated (AB), filter={filter_path.split('/')[-1].split('.')[0]}, magnitude={mag_v}"
+    primary_header['COMMENT'] = f"Flux calibrated ergs/cm2/s/A (AB), filter={filter_path.split('/')[-1].split('.')[0]}, magnitude={mag_v}"
 
-    # Write both HDUs to a new FITS file
-    hdulist = fits.HDUList([primary_hdu, table_hdu])
-    hdulist.writeto(fits_out, overwrite=True, output_verify='ignore')
+    y = flux_corrected.astype(np.float32)
+    DiskHDU = fits.PrimaryHDU(y, header=primary_header)
+    DiskHDU.writeto(fits_out, overwrite='True')
+
 
 
     print(f"✅ Output written to: {fits_out}")
