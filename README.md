@@ -1,48 +1,54 @@
 # specflux-calibrator
 
-A Python tool to calibrate FITS spectra to absolute flux using AB magnitudes and filter transmission curves.
+A simple Python tool to calibrate astronomical spectra in absolute flux using the AB magnitude system.
 
 ## Features
 
-- Reads 1D spectra in FITS format.
-- Uses filter transmission curves (CSV files with wavelength in nm and transmission in %).
-- Converts spectra from arbitrary units to absolute flux (erg/s/cm²/Å) based on a user-provided AB magnitude.
-- Saves calibrated spectra as new FITS files, preserving original headers.
-- Uses `specutils`, `astropy`, and `scipy`.
-
-## Installation
-
-Make sure you have Python 3 and the following packages installed:
-
-```bash
-pip install numpy astropy specutils scipy
-```
+- Calibrate spectra in FITS format using a filter transmission curve (CSV).
+- Uses the AB magnitude system for flux calibration.
+- Supports Bessel V or any other filter transmission provided as CSV.
+- Preserves original FITS header metadata.
+- Optionally plot the calibrated spectrum with matplotlib.
 
 ## Usage
 
 ```bash
-python calibrate_spectrum.py path/to/spectrum.fits filter_name magnitude_v
+python calibrate_spectrum.py <spectrum.fits> <filter.csv> <magnitude_V> [--plot]
 ```
 
-- `path/to/spectrum.fits`: input spectrum in FITS format.
-- `filter_name`: name of the filter CSV file (located in `filters/` folder), e.g. `bessel_v`.
-- `magnitude_v`: AB magnitude to calibrate the spectrum.
+- `<spectrum.fits>` : Path to the input spectrum FITS file (WCS1D format).
+- `<filter.csv>` : Path to CSV file with filter transmission. CSV format:
+  - 1st column: wavelength in nm
+  - 2nd column: transmission in %
+- `<magnitude_V>` : Target magnitude in the V filter (AB system).
+- `[--plot]` : Optional flag to display a plot of the calibrated spectrum.
 
 Example:
 
 ```bash
-python calibrate_spectrum.py data/spec.fits bessel_v 14.2
+python calibrate_spectrum.py data/spectrum.fits filters/bessel_v.csv 12.3 --plot
 ```
 
-The calibrated spectrum will be saved as `data/spec-abs.fits`.
+## Output
 
-## Filter Transmission Files
+- The calibrated spectrum is saved as a new FITS file named `<originalname>-abs.fits`.
+- The FITS file contains the calibrated flux in units of `ergs/cm2/s/Å`.
+- The header metadata from the original file is preserved.
+- A comment is added noting the filter and magnitude used.
 
-Filter transmission files should be CSV files with two columns:
+## Dependencies
 
-- Wavelength in nm (first column)
-- Transmission in % (second column)
+- Python 3
+- numpy
+- astropy
+- specutils
+- scipy
+- matplotlib (only needed if using `--plot` option)
 
-Place them in the `filters/` directory.
+Install with:
 
+```bash
+pip install numpy astropy specutils scipy matplotlib
+```
 
+---
