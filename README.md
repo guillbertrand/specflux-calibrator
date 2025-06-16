@@ -45,10 +45,4 @@ Filter transmission files should be CSV files with two columns:
 
 Place them in the `filters/` directory.
 
-## License
 
-MIT License
-
----
-
-Feel free to ask if you want me to add more sections like examples, tests, or development notes!
