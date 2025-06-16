@@ -19,14 +19,14 @@ python calibrate_spectrum.py <spectrum.fits> <filter.csv> <magnitude_V> [--plot]
 - `<spectrum.fits>` : Path to the input spectrum FITS file (WCS1D format).
 - `<filter.csv>` : Path to CSV file with filter transmission. CSV format:
   - 1st column: wavelength in nm
-  - 2nd column: transmission in %
+  - 2nd column: transmission in fraction
 - `<magnitude_V>` : Target magnitude in the V filter (AB system).
 - `[--plot]` : Optional flag to display a plot of the calibrated spectrum.
 
 Example:
 
 ```bash
-python calibrate_spectrum.py data/spectrum.fits filters/bessel_v.csv 12.3 --plot
+python calibrate_spectrum.py sample/_hd128998_20250515_861.fits filters/bessel-v-baader.csv 5.83 --plot   
 ```
 
 ## Output

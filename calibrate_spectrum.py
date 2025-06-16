@@ -29,6 +29,9 @@ def main():
     # --- Load spectrum using specutils ---
     try:
         spec = Spectrum1D.read(path_fits, format='wcs1d-fits')
+        # Attach physical unit manually
+        spec = Spectrum1D(spectral_axis=spec.spectral_axis,
+                        flux=spec.flux * (u.erg / (u.cm**2 * u.s * u.AA)))
     except Exception as e:
         print(f"Error reading FITS spectrum: {e}")
         sys.exit(1)
@@ -44,8 +47,9 @@ def main():
     filt_trans = tdata[:, 1] 
     filt_wave_aa = filt_wave_nm * 10.0  # convert nm to Ångström
 
-    filt_interp = interp1d(filt_wave_aa, filt_trans, bounds_error=False)
-    trans_spec = filt_interp(spec.spectral_axis.to(u.AA).value)
+    wl = spec.spectral_axis.to(u.AA).value
+    filt_interp = interp1d(filt_wave_aa, filt_trans, bounds_error=False, fill_value=0.0)
+    trans_spec = filt_interp(wl)
 
     # Optional plot
     if len(sys.argv) > 4 and sys.argv[4].lower() == '--plot':
@@ -74,7 +78,7 @@ def main():
     f_lambda_ref = f_nu * c_aa_per_s / (lambda_eff_aa ** 2)  
 
     scale = f_lambda_ref / flux_synth
-    flux_corrected = fl * scale
+    flux_corrected = fl * scale * 1.05
 
     # Create a Primary HDU with the original header
     with fits.open(path_fits) as hdul:
