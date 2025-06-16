@@ -7,6 +7,8 @@ from astropy.io import fits
 from specutils import Spectrum
 from scipy.interpolate import interp1d
 from scipy.integrate import simpson
+import matplotlib.pyplot as plt
+
 
 def compute_lambda_eff(wave, trans):
     """Compute effective wavelength of the filter (weighted by transmission)."""
@@ -82,6 +84,18 @@ def main():
 
 
     print(f"✅ Output written to: {fits_out}")
+
+    # Optional plot
+    if len(sys.argv) > 4 and sys.argv[4].lower() == '--plot':
+        plt.figure(figsize=(10,6))
+        plt.plot(wl, flux_corrected, label='Calibrated Flux')
+        plt.xlabel('Wavelength (Å)')
+        plt.ylabel('Flux (ergs/cm2/s/Å)')
+        plt.title(f'Calibrated Spectrum - Filter: {filter_path.split("/")[-1].split(".")[0]}, Mag: {mag_v}')
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
 
 if __name__ == "__main__":
     main()
