@@ -117,7 +117,7 @@ def main():
     print(f"λ_eff (Å): {compute_lambda_eff(filt_wave_aa, filt_trans):.2f}")
     print(f"Synthetic flux (erg/cm²/s/Å): {flux_synth:.3e}")
     print(f"Reference flux ({system_label}): {f_lambda_ref:.3e}")
-    print(f"Scaling factor: {scale:.5f}")
+    print(f"Scaling factor: {scale:.5e}")
 
     # Apply flux correction
     flux_corrected = fl * scale
